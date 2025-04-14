@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, REST, Routes, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { ApiClient } = require('@twurple/api');
 const { AppTokenAuthProvider } = require('@twurple/auth');
 const fs = require('fs');
@@ -35,6 +35,7 @@ try {
 }
 
 let liveMessages = new Map();
+let imageUrls = new Map(); // Stockage des URLs d'images avec leur timestamp
 
 // Fonction pour sauvegarder les streamers
 function saveStreamers() {
@@ -152,10 +153,66 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
-        const streamersList = Array.from(streamers).map(name => `• ${name.replace(/_/g, '\\_')}`).join('\n');
-        await interaction.reply({
-            content: `**Liste des streamers suivis (${streamers.size}) :**\n${streamersList}`,
+        const STREAMERS_PER_PAGE = 10;
+        const streamersArray = Array.from(streamers);
+        const totalPages = Math.ceil(streamersArray.length / STREAMERS_PER_PAGE);
+        let currentPage = 1;
+
+        function getPageContent(page) {
+            const start = (page - 1) * STREAMERS_PER_PAGE;
+            const end = start + STREAMERS_PER_PAGE;
+            const pageStreamers = streamersArray.slice(start, end);
+            
+            const streamersList = pageStreamers.map(name => `• ${name.replace(/_/g, '\\_')}`).join('\n');
+            return `**Liste des streamers suivis (${streamers.size}) :**\n${streamersList}\n\nPage ${page}/${totalPages}`;
+        }
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('prev_page')
+                    .setLabel('◀️')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true),
+                new ButtonBuilder()
+                    .setCustomId('next_page')
+                    .setLabel('▶️')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(totalPages <= 1)
+            );
+
+        const message = await interaction.reply({
+            content: getPageContent(currentPage),
+            components: [row],
             ephemeral: true
+        });
+
+        const collector = message.createMessageComponentCollector({ time: 300000 }); // 5 minutes
+
+        collector.on('collect', async i => {
+            if (i.user.id !== interaction.user.id) {
+                await i.reply({ content: 'Vous ne pouvez pas utiliser ces boutons.', ephemeral: true });
+                return;
+            }
+
+            if (i.customId === 'prev_page') {
+                currentPage--;
+            } else if (i.customId === 'next_page') {
+                currentPage++;
+            }
+
+            row.components[0].setDisabled(currentPage === 1);
+            row.components[1].setDisabled(currentPage === totalPages);
+
+            await i.update({
+                content: getPageContent(currentPage),
+                components: [row]
+            });
+        });
+
+        collector.on('end', () => {
+            row.components.forEach(component => component.setDisabled(true));
+            message.edit({ components: [row] }).catch(() => {});
         });
     }
 });
@@ -171,6 +228,7 @@ async function checkStreams() {
         } catch (error) {
             // Si le message n'existe plus, on le retire de la Map
             liveMessages.delete(streamerName);
+            imageUrls.delete(streamerName); // Nettoyage de l'URL stockée
             console.log(`Message supprimé pour ${streamerName}, nettoyage effectué`);
         }
     }
@@ -194,9 +252,18 @@ async function checkStreams() {
 
                 // Vérification si on doit recréer le message (toutes les 2 heures)
                 const shouldRecreateMessage = hours > 0 && hours % 2 === 0 && minutes === 0;
+                // Vérification si on doit mettre à jour l'image (toutes les 10 minutes)
+                const shouldUpdateImage = minutes % 10 === 0;
 
                 // Récupération des informations de la catégorie
                 const category = await twitchClient.games.getGameById(stream.gameId);
+                
+                // Gestion de l'URL de l'image
+                let imageUrl = imageUrls.get(streamerName);
+                if (!imageUrl || shouldUpdateImage) {
+                    imageUrl = `${stream.thumbnailUrl.replace('{width}', '1920').replace('{height}', '1080')}?t=${Date.now()}`;
+                    imageUrls.set(streamerName, imageUrl);
+                }
                 
                 // Création de l'embed
                 const embed = {
@@ -208,7 +275,7 @@ async function checkStreams() {
                         icon_url: user.profilePictureUrl
                     },
                     image: {
-                        url: `${stream.thumbnailUrl.replace('{width}', '1920').replace('{height}', '1080')}?t=${Date.now()}`
+                        url: imageUrl
                     },
                     fields: [
                         {
