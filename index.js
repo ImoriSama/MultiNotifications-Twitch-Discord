@@ -208,7 +208,7 @@ async function checkStreams() {
                         icon_url: user.profilePictureUrl
                     },
                     image: {
-                        url: stream.thumbnailUrl.replace('{width}', '1920').replace('{height}', '1080')
+                        url: `${stream.thumbnailUrl.replace('{width}', '1920').replace('{height}', '1080')}?t=${Date.now()}`
                     },
                     fields: [
                         {
