@@ -13,7 +13,7 @@ Ce bot Discord permet de notifier automatiquement les lives Twitch dans un chann
 
 1. Clonez ce dépôt :
 ```bash
-git clone https://github.com/votre-utilisateur/Twitch-Notif-Bot.git
+git clone https://github.com/ImoriSama/MultiNotifications-Twitch-Discord.git
 cd Twitch-Notif-Bot
 ```
 
