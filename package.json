@@ -1,0 +1,15 @@
+{
+  "name": "twitch-notif-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord pour les notifications Twitch",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "@twurple/api": "^7.0.0",
+    "@twurple/auth": "^7.0.0",
+    "dotenv": "^16.3.1"
+  }
+} 
