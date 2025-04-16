@@ -46,7 +46,7 @@ cp .env.exemple .env
 ### Configuration Twitch
 1. Créez une application Twitch sur le [Portail des développeurs Twitch](https://dev.twitch.tv/console)
 2. Notez l'ID client et le secret client
-3. Configurez l'URL de redirection (si nécessaire)
+3. Configurez l'URL de redirection ("http://localhost" à mettre par défaut)
 
 ## Utilisation
 
@@ -58,6 +58,7 @@ npm start
 2. Commandes disponibles :
 - `/addstreamer [nom]` - Ajoute un streamer à la liste des notifications
 - `/removestreamer [nom]` - Retire un streamer de la liste des notifications
+- `/liststreamers` - Liste tous les streamers suivis
 
 ## Fonctionnalités
 
@@ -65,6 +66,7 @@ npm start
 - Suppression automatique des messages lorsque le live se termine
 - Commandes slash pour gérer la liste des streamers
 - Vérification des lives à intervalle régulier
+- Mise à jour automatique des miniatures de live à intervalle régulier
 - Interface simple et intuitive
 
 ## Support
